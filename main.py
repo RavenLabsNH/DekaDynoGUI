@@ -3,6 +3,8 @@ import multiprocessing as mp
 from math import sin, cos
 import random
 
+import GenerateMatPlotLib as mpl
+
 dpg.create_context()
 
 
@@ -12,7 +14,7 @@ def update_plot_data(plot_data, q):
             plot_data.pop(0)
         t = q.get()
         plot_data.append(sin(t / 30))
-        dpg.set_value("plot2", plot_data)
+        #dpg.set_value("plot2", plot_data)
         #dpg.set_value("plot1", plot_data)
 
 def generate_random_number(q):
@@ -48,6 +50,9 @@ def change_view_help():
 if __name__ == '__main__':
     data = []
 
+    mpl.generate()
+
+
     # add a font registry
     with dpg.font_registry():
         # first argument ids the path to the .ttf or .otf file
@@ -68,7 +73,8 @@ if __name__ == '__main__':
         dpg.add_static_texture(width, height, data2, tag="sound_icon")
         width, height, channels, data2 = dpg.load_image("content/RavenLabs/Raven_Labs_Logo-White-4.png")
         dpg.add_static_texture(width, height, data2, tag="raven-logo1")
-
+        width, height, channels, data2 = dpg.load_image("foo.png")
+        dpg.add_static_texture(width, height, data2, tag="chart")
     sindatax = []
     sindatay = []
     cosdatay = []
@@ -81,14 +87,7 @@ if __name__ == '__main__':
     with dpg.window(tag="Dyno", width=900, height=1080):
 
         dpg.bind_font(second_font)
-
-
         with dpg.child_window(autosize_x=True, autosize_y=True, border=False):
-            # with dpg.child_window(autosize_x=True, height=105, no_scrollbar=True):
-            #     with dpg.group(horizontal=True, indent=150):
-            #         title = dpg.add_text("Dyno Cluster Tester")
-            #         dpg.bind_item_font(title, title_font)
-
             with dpg.child_window(autosize_x=True, height=900):
                 with dpg.group(horizontal=True, indent=150):
                     title = dpg.add_text("Dyno Cluster Tester")
@@ -126,7 +125,8 @@ if __name__ == '__main__':
                                 # series belong to a y axis
                                 dpg.add_line_series(sindatax, sindatay, label="0.5 + 0.5 * sin(x)")
                     with dpg.child_window(width=1480, autosize_y=True, show=False, tag="sound_page", border=False):
-                        dpg.add_simple_plot(min_scale=-1.0, max_scale=1.0, height=350, width=1000, tag="plot2")
+                        #dpg.add_simple_plot(min_scale=-1.0, max_scale=1.0, height=350, width=1000, tag="plot2")
+                        dpg.add_image("chart", pos=[-100,-150])
                     with dpg.child_window(width=1480, autosize_y=True, show=False, tag="help_page", border=False):
                         dpg.add_image("raven-logo1", pos=[200,100])
 
@@ -140,6 +140,7 @@ if __name__ == '__main__':
     dpg.setup_dearpygui()
     dpg.set_global_font_scale(1.5)
     dpg.show_viewport()
+
 
     dpg.set_primary_window("Dyno", True)
 
