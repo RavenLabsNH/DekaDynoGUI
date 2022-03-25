@@ -17,5 +17,6 @@ demo.show_demo()
 
 dpg.setup_dearpygui()
 dpg.show_viewport()
-dpg.start_dearpygui()
+while dpg.is_dearpygui_running():
+    dpg.render_dearpygui_frame()
 dpg.destroy_context()
