@@ -1,3 +1,12 @@
+"""
+matplot.py
+
+Copyright © 2022 Raven Labs
+Manchester, New Hampshire
+www.ravenlabsnh.com
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,7 +26,7 @@ def generate():
     ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
                     cmap='viridis', edgecolor='none')
     ax.set_title('surface');
-    plt.savefig("foo.png", transparent=True, pad_inches=0)
+    plt.savefig("content/matplotlib.png", transparent=True, pad_inches=0)
 
 
 class GenerateMatPlotLib:

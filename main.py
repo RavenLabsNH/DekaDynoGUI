@@ -1,9 +1,18 @@
+"""
+main.py
+
+Copyright © 2022 Raven Labs
+Manchester, New Hampshire
+www.ravenlabsnh.com
+
+"""
+
 import dearpygui.dearpygui as dpg
 import multiprocessing as mp
 from math import sin, cos
 import random
 
-import GenerateMatPlotLib as mpl
+import matplot as mpl
 
 dpg.create_context()
 
@@ -73,7 +82,7 @@ if __name__ == '__main__':
         dpg.add_static_texture(width, height, data2, tag="sound_icon")
         width, height, channels, data2 = dpg.load_image("content/RavenLabs/Raven_Labs_Logo-White-4.png")
         dpg.add_static_texture(width, height, data2, tag="raven-logo1")
-        width, height, channels, data2 = dpg.load_image("foo.png")
+        width, height, channels, data2 = dpg.load_image("content/matplotlib.png")
         dpg.add_static_texture(width, height, data2, tag="chart")
     sindatax = []
     sindatay = []
@@ -140,7 +149,6 @@ if __name__ == '__main__':
     dpg.setup_dearpygui()
     dpg.set_global_font_scale(1.5)
     dpg.show_viewport()
-
 
     dpg.set_primary_window("Dyno", True)
 

@@ -1,8 +1,17 @@
+"""
+demo.py
+
+Copyright © 2022 Raven Labs
+Manchester, New Hampshire
+www.ravenlabsnh.com
+
+"""
+
 import dearpygui.dearpygui as dpg
 import dearpygui.demo as demo
 
 dpg.create_context()
-dpg.create_viewport(title='Custom Title', width=600, height=600)
+dpg.create_viewport(title='Demo', width=900, height=900)
 
 demo.show_demo()
 
