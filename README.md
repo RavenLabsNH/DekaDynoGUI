@@ -1,6 +1,10 @@
 # DekaDynoGUI
 Front End Application (HMI) for Deka Dyno
 
+Copyright © 2022 Raven Labs
+Manchester, New Hampshire
+www.ravenlabsnh.com
+
 # Getting Started
 Building the Dyno front end is relatively easy.
 
