@@ -43,6 +43,9 @@ def generate_random_number(q):
 def change_view(sender, app_data, user_data):
     """
     Change the main view of the application
+    :param sender: sender event args
+    :param app_data: app data event args
+    :param user_data: page to switch to
     :return:
     """
     dpg.configure_item("help_page", show=False)
@@ -62,7 +65,7 @@ if __name__ == '__main__':
 
     # Add images by creating textures
     with dpg.texture_registry():
-        width, height, channels, data2 = dpg.load_image("content/Home.png")
+        width, height, channels, data2 = dpg.load_image("content/home.png")
         dpg.add_static_texture(width, height, data2, tag="home_icon")
         width, height, channels, data2 = dpg.load_image("content/settings.png")
         dpg.add_static_texture(width, height, data2, tag="settings_icon")
