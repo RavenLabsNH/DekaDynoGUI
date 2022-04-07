@@ -1,5 +1,5 @@
 """
-main.py
+old_dyno.py
 
 Copyright © 2022 Raven Labs
 Manchester, New Hampshire
@@ -11,13 +11,9 @@ import time
 import dearpygui.dearpygui as dpg
 import multiprocessing as mp
 from math import sin, sqrt
-import random
 import pyaudio
 import wave
 import numpy as np
-import pickle as pickle
-
-
 
 dpg.create_context()
 
@@ -265,11 +261,11 @@ if __name__ == '__main__':
                 with dpg.child_window(width=1480, autosize_y=True, show=False, tag="sound_page", border=False):
                     #dpg.add_simple_plot(min_scale=-1.0, max_scale=1.0, height=350, width=1000, tag="plot")
                     with dpg.plot(label="Frequency Spectrum", height=800, width=-1, tag="fft_plot"):
-                        dpg.add_plot_legend()
+                        #dpg.add_plot_legend()
                         dpg.add_plot_axis(dpg.mvXAxis, label="Hertz", tag="hertz_axis", log_scale=False)
                         dpg.add_plot_axis(dpg.mvYAxis, label="dB", tag="db_axis", log_scale=False)
                         dpg.add_line_series([], [], label="FFT", parent=dpg.last_item(), tag="fft_series")
-                        #dpg.set_axis_limits("rpm_axis", 2000, 12000)
+
                 # Help Page
                 with dpg.child_window(width=1480, autosize_y=True, show=False, tag="help_page", border=False):
                     dpg.add_image("raven-logo1", pos=[200, 100])
