@@ -34,6 +34,9 @@ def pause_test():
     dpg.configure_item("stop_button", show=False)
     dpg.configure_item("pause_button", show=False)
 
+def clean_up():
+    flag.value = False
+
 def audio(time_fft_q, data_fft_q, file_name, flag):
     recording_process = Recorder(time_fft_q, data_fft_q, file_name, 'wb', flag)
     recording_process.record()
@@ -76,7 +79,7 @@ with dpg.theme() as input_theme:
 with dpg.window(tag="Dyno", width=1440, height=1024) as window:
 
     # Title
-    dpg.add_text("Deka Dyno", pos=[40, 40])
+    dpg.add_text("Gearbox Dyno", pos=[40, 40])
     dpg.bind_item_font(dpg.last_item(), font_regular_24)
 
     # Input & Controls
@@ -127,10 +130,10 @@ with dpg.window(tag="Dyno", width=1440, height=1024) as window:
         dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
     with dpg.child_window(height=614, width=646, pos=[40, 370]):
-        dpg.add_text("Frequency Spectrum", pos=[21, 39])
+        dpg.add_text("Noise Analysis", pos=[21, 39])
         dpg.bind_item_font(dpg.last_item(), font_regular_16)
         with dpg.plot(pos=[22, 79], height=510, width=598, tag="fft_plot"):
-            #dpg.add_plot_legend()
+            dpg.add_plot_legend()
             dpg.add_plot_axis(dpg.mvXAxis, label="Hertz", log_scale=False)
             dpg.add_plot_axis(dpg.mvYAxis, label="dB", log_scale=False)
             dpg.add_line_series([0, 5000, 10000, 15000, 20000, 25000], [0, 10000, 20000, 30000, 40000], label="FFT",
@@ -164,10 +167,12 @@ if __name__ == '__main__':
     data_fft_q = mp.Queue()
     flag = mp.Value(c_bool, True)
 
-    dpg.create_viewport(title='Deka Dyno', width=1440, height=1064, x_pos=40, y_pos=40)
+    dpg.create_viewport(title='Gearbox Dyno', width=1440, height=1064, x_pos=40, y_pos=40)
     dpg.bind_item_theme(window, rpm_theme)
     dpg.setup_dearpygui()
     dpg.show_viewport()
+
+    dpg.set_exit_callback(clean_up)
 
     dpg.set_primary_window("Dyno", True)
 
