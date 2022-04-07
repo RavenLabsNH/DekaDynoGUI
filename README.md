@@ -32,4 +32,4 @@ $ env/bin/activate # for MacOS/Unix/Linux
 `$ pip3 install -r requirements.txt`
 
 ### 6. Launch the application
-`$ python3 main.py`
+`$ python3 dyno.py`

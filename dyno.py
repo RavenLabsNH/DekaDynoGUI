@@ -18,7 +18,7 @@ def start_test():
     dpg.configure_item("stop_button", show=True)
     dpg.configure_item("pause_button", show=True)
     work_order = dpg.get_value("work_order")
-    file_name = work_order+"_"+time.strftime("%m%d%Y-%H%M%S") + ".wav"
+    file_name = "recordings/"+work_order+"_"+time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
     audio_process = mp.Process(target=audio, args=(time_fft_q, data_fft_q, file_name, flag,))
     audio_process.start()
