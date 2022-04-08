@@ -1,0 +1,14 @@
+profiles:
+  - name: Acoustic
+    sequence:
+      RPM: 1000
+      Dwell: 200
+  - name: Break-in
+    sequence:
+      RPM: 1000
+      Dwell: 200
+  - name: Grants Profile
+    sequence:
+      RPM: 1000
+      Dwell: 200
+

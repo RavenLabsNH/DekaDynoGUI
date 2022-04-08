@@ -1,18 +1,40 @@
 import dearpygui.dearpygui as dpg
 import multiprocessing as mp
 import time
+import yaml
 from ctypes import c_bool
 from audio import Recorder
 
 dpg.create_context()
 
+profile_names = []
+config = {}
+
+with open("config.yaml", "r") as stream:
+    try:
+        config = yaml.safe_load(stream)
+    except yaml.YAMLError as exc:
+        print("Error reading config file")
+        exit()
+
+for profile in config["profiles"]:
+    profile_names.append(profile['name'])
+
 def update_plot_data(time_fft_q, data_fft_q):
+    """
+        Updates the plots with new data generated from separate python processes
+        :param time_fft_q: The queue for fft time x-axis data
+        :param data_fft_q: The queue for fft data y-axis data
+    """
     if data_fft_q.qsize() > 0:
         fftData = data_fft_q.get()
         fftTime = time_fft_q.get()
         dpg.set_value('fft_series', [fftTime, fftData])
 
 def start_test():
+    """
+        starts the dynamometer test
+    """
     flag.value = True
     dpg.configure_item("start_button", show=False)
     dpg.configure_item("stop_button", show=True)
@@ -20,24 +42,40 @@ def start_test():
     work_order = dpg.get_value("work_order")
     file_name = "recordings/"+work_order+"_"+time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
-    audio_process = mp.Process(target=audio, args=(time_fft_q, data_fft_q, file_name, flag,))
+    audio_process = mp.Process(target=audio_proccesing, args=(time_fft_q, data_fft_q, file_name, flag,))
     audio_process.start()
 
 def stop_test():
+    """
+        stops the dynamometer test
+    """
     flag.value = False
     dpg.configure_item("start_button", show=True)
     dpg.configure_item("stop_button", show=False)
     dpg.configure_item("pause_button", show=False)
 
 def pause_test():
+    """
+       pauses the dynamometer test
+   """
     dpg.configure_item("start_button", show=True)
     dpg.configure_item("stop_button", show=False)
     dpg.configure_item("pause_button", show=False)
 
 def clean_up():
+    """
+       cleans up the python processes before terminating
+   """
     flag.value = False
 
-def audio(time_fft_q, data_fft_q, file_name, flag):
+def audio_proccesing(time_fft_q, data_fft_q, file_name, flag):
+    """
+       Separate python process for doing audio processing
+       :param time_fft_q: The queue for fft time x-axis data
+       :param data_fft_q: The queue for fft data y-axis data
+       :param file_name: The name of the file to save the audio recordings to
+       :param flag: multiprocessing flag to singal when recording should be active
+   """
     recording_process = Recorder(time_fft_q, data_fft_q, file_name, 'wb', flag)
     recording_process.record()
 
@@ -85,7 +123,7 @@ with dpg.window(tag="Dyno", width=1440, height=1024) as window:
     # Input & Controls
     dpg.add_text("Profile", pos=[51, 96])
     dpg.bind_item_font(dpg.last_item(), font_regular_12)
-    dpg.add_combo(["Acoustic", "Breakin"], pos=[40, 116], width=429, default_value="Acoustic", tag="profile_combo")
+    dpg.add_combo(profile_names, pos=[40, 116], width=429, default_value="Acoustic", tag="profile_combo")
     dpg.bind_item_font("profile_combo", font_regular_16)
     dpg.bind_item_theme(dpg.last_item(), input_theme)
 
@@ -160,7 +198,6 @@ with dpg.window(tag="Dyno", width=1440, height=1024) as window:
             dpg.add_line_series([], [], label="Load Torque", parent=dpg.last_item(), tag="load_torque_series")
             dpg.add_line_series([], [], label="Motor Torque", parent="torque_axis", tag="motor_torque_series")
 
-
 if __name__ == '__main__':
     mp.set_start_method('spawn')
     time_fft_q = mp.Queue()
@@ -176,7 +213,6 @@ if __name__ == '__main__':
 
     dpg.set_primary_window("Dyno", True)
 
-    # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running():
         update_plot_data(time_fft_q, data_fft_q)
         dpg.render_dearpygui_frame()

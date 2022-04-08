@@ -31,11 +31,11 @@ class Recorder(mp.Process):
 
         while bool(self.flag.value):
             in_data = self._stream.read(self.frames_per_buffer, exception_on_overflow=False)
-            waveData = wave.struct.unpack("%dh" % self.frames_per_buffer, in_data)
-            npArrayData = np.array(waveData)
-            indata = npArrayData * self.normalized
+            wave_data = wave.struct.unpack("%dh" % self.frames_per_buffer, in_data)
+            np_array_data = np.array(wave_data)
+            data = np_array_data * self.normalized
 
-            self.data_fft_q.put(np.abs(np.fft.rfft(indata)))
+            self.data_fft_q.put(np.abs(np.fft.rfft(data)))
             self.time_fft_q.put(np.fft.rfftfreq(self.frames_per_buffer, 1.0 / self.rate))
 
             self.wavefile.writeframes(in_data)
