@@ -9,6 +9,9 @@ dpg.create_context()
 
 profile_names = []
 config = {}
+test_sequence = []
+
+
 
 with open("config.yaml", "r") as stream:
     try:
@@ -20,27 +23,52 @@ with open("config.yaml", "r") as stream:
 for profile in config["profiles"]:
     profile_names.append(profile['name'])
 
-def update_plot_data(time_fft_q, data_fft_q):
+def populate_test():
+    for profile in config["profiles"]:
+        if profile["name"] == dpg.get_value("profile_combo"):
+            for sequence in profile["sequence"]:
+                for step in sequence:
+                    if step == "RPM":
+                        rpm = sequence[step]
+                    if step == "Dwell":
+                        for x in range(sequence[step]):
+                            test_sequence.append(rpm)
+            time_x_axis = list(range(0, len(test_sequence)))
+            dpg.set_value('rpm_series', [time_x_axis, test_sequence])
+            dpg.set_axis_limits("rpm_axis", min(test_sequence)-100, max(test_sequence)+100)
+            dpg.set_axis_limits("time_axis", 0, len(time_x_axis))
+
+
+
+
+def update_plot_data(time_fft_q, data_fft_q, last_time):
     """
         Updates the plots with new data generated from separate python processes
         :param time_fft_q: The queue for fft time x-axis data
         :param data_fft_q: The queue for fft data y-axis data
     """
     if data_fft_q.qsize() > 0:
-        fftData = data_fft_q.get()
-        fftTime = time_fft_q.get()
-        dpg.set_value('fft_series', [fftTime, fftData])
+        fft_data = data_fft_q.get()
+        fft_time = time_fft_q.get()
+        dpg.set_value('fft_series', [fft_time, fft_data])
+
+    if flag.value == True:
+        if time.time() > last_time:
+            last_time = time.time()
+
+
 
 def start_test():
     """
         starts the dynamometer test
     """
+    populate_test()
     flag.value = True
     dpg.configure_item("start_button", show=False)
     dpg.configure_item("stop_button", show=True)
     dpg.configure_item("pause_button", show=True)
     work_order = dpg.get_value("work_order")
-    file_name = "recordings/"+work_order+"_"+time.strftime("%m%d%Y-%H%M%S") + ".wav"
+    file_name = "recordings/" + work_order + "_"+time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
     audio_process = mp.Process(target=audio_proccesing, args=(time_fft_q, data_fft_q, file_name, flag,))
     audio_process.start()
@@ -177,7 +205,6 @@ with dpg.window(tag="Dyno", width=1440, height=1024) as window:
             dpg.add_line_series([0, 5000, 10000, 15000, 20000, 25000], [0, 10000, 20000, 30000, 40000], label="FFT",
                                 parent=dpg.last_item(), tag="fft_series")
 
-
     with dpg.child_window(height=614, width=680, pos=[720, 370]):
         dpg.add_text("Motor Profile", pos=[21, 39])
         dpg.bind_item_font(dpg.last_item(), font_regular_16)
@@ -197,12 +224,15 @@ with dpg.window(tag="Dyno", width=1440, height=1024) as window:
 
             dpg.add_line_series([], [], label="Load Torque", parent=dpg.last_item(), tag="load_torque_series")
             dpg.add_line_series([], [], label="Motor Torque", parent="torque_axis", tag="motor_torque_series")
+            dpg.add_line_series([], [], parent="torque_axis", tag="present_time")
 
 if __name__ == '__main__':
     mp.set_start_method('spawn')
     time_fft_q = mp.Queue()
     data_fft_q = mp.Queue()
     flag = mp.Value(c_bool, True)
+
+    last_time = time.time()
 
     dpg.create_viewport(title='Gearbox Dyno', width=1440, height=1064, x_pos=40, y_pos=40)
     dpg.bind_item_theme(window, rpm_theme)
@@ -214,5 +244,5 @@ if __name__ == '__main__':
     dpg.set_primary_window("Dyno", True)
 
     while dpg.is_dearpygui_running():
-        update_plot_data(time_fft_q, data_fft_q)
+        update_plot_data(time_fft_q, data_fft_q, last_time)
         dpg.render_dearpygui_frame()
