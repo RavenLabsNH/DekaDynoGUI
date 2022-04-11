@@ -2,11 +2,11 @@ profiles:
   - name: Acoustic
     sequence:
       - RPM: 200
-      - Dwell: 200
+      - Dwell: 20
       - RPM: 400
-      - Dwell: 100
+      - Dwell: 10
       - RPM: 600
-      - Dwell: 300
+      - Dwell: 30
   - name: Break-in
     sequence:
       - RPM: 1000
