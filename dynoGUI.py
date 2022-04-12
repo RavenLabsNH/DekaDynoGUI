@@ -12,18 +12,21 @@ class DynoGUI():
         mp.set_start_method('spawn')
         self.time_fft_q = mp.Queue()
         self.data_fft_q = mp.Queue()
-        self.flag = mp.Value(c_bool, False)
+        self.running_flag = mp.Value(c_bool, False)
         self.profile_names = []
         self.test_sequence = []
 
         #To Be Deleted
-        self.last_time = 0
+        self.start_time = 0
         self.time_x_axis = []
         self.fake_rpm_data = []
-        self.index = 0
+        self.rpm_time = []
 
 
     def create_page(self):
+        """
+        Create the page with DearPyGUI components
+        """
         for profile in self.config["profiles"]:
             self.profile_names.append(profile['name'])
 
@@ -62,6 +65,10 @@ class DynoGUI():
             with dpg.theme_component(dpg.mvAll):
                 dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 7, 9, category=dpg.mvThemeCat_Core)
 
+        with dpg.theme() as progress_chart_theme:
+            with dpg.theme_component(dpg.mvAll):
+                dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 6, category=dpg.mvThemeCat_Plots)
+
         with dpg.window(tag="Dyno", width=1440, height=1024) as window:
             # Title
             dpg.add_text("Gearbox Dyno", pos=[40, 40])
@@ -70,7 +77,8 @@ class DynoGUI():
             # Input & Controls
             dpg.add_text("Profile", pos=[51, 96])
             dpg.bind_item_font(dpg.last_item(), font_regular_12)
-            dpg.add_combo(self.profile_names, pos=[40, 116], width=429, default_value="Acoustic", tag="profile_combo")
+            dpg.add_combo(self.profile_names, pos=[40, 116], width=429, default_value="Acoustic",
+                          callback=self.__populate_test, tag="profile_combo")
             dpg.bind_item_font("profile_combo", font_regular_16)
             dpg.bind_item_theme(dpg.last_item(), input_theme)
 
@@ -82,17 +90,17 @@ class DynoGUI():
             dpg.bind_item_theme(dpg.last_item(), input_theme)
 
             dpg.add_button(label="Start", width=429, height=40, pos=[971, 116], show=True, tag="start_button",
-                           callback=self.start_test)
+                           callback=self.__start_test)
             dpg.bind_item_font(dpg.last_item(), font_regular_14)
             # dpg.bind_item_theme(dpg.last_item(), pause_button_theme)
 
             dpg.add_button(label="Pause", width=202, height=40, pos=[971, 116], show=False, tag="pause_button",
-                           callback=self.pause_test)
+                           callback=self.__pause_test)
             dpg.bind_item_font(dpg.last_item(), font_regular_14)
             dpg.bind_item_theme(dpg.last_item(), pause_button_theme)
 
             dpg.add_button(label="Stop", width=202, height=40, pos=[1198, 116], show=False, tag="stop_button",
-                           callback=self.stop_test)
+                           callback=self.__stop_test)
             dpg.bind_item_font(dpg.last_item(), font_regular_14)
             dpg.bind_item_theme(dpg.last_item(), stop_button_theme)
 
@@ -139,6 +147,7 @@ class DynoGUI():
 
                     dpg.add_line_series([], [], label="RPM", parent=dpg.last_item(), tag="rpm_series")
                     dpg.add_line_series([], [], parent="rpm_axis", tag="present_time")
+                    dpg.bind_item_theme(dpg.last_item(), progress_chart_theme)
 
                     # create y axis 2
                     dpg.add_plot_axis(dpg.mvYAxis, label="Torque (Nm)", tag="torque_axis")
@@ -146,46 +155,50 @@ class DynoGUI():
                     dpg.add_line_series([], [], label="Load Torque", parent=dpg.last_item(), tag="load_torque_series")
                     dpg.add_line_series([], [], label="Motor Torque", parent="torque_axis", tag="motor_torque_series")
 
-
         dpg.create_viewport(title='Gearbox Dyno', width=1440, height=1064, x_pos=40, y_pos=40)
         dpg.bind_item_theme(window, rpm_theme)
         dpg.setup_dearpygui()
         dpg.show_viewport()
 
-        dpg.set_exit_callback(self.clean_up)
+        self.__populate_test()
+        dpg.set_exit_callback(self.__clean_up)
 
         dpg.set_primary_window("Dyno", True)
 
     def run(self):
+        """
+        Run the main DearPyGui render thread
+        """
         while dpg.is_dearpygui_running():
-            self.update_plot_data()
+            self.__update_plot_data()
             dpg.render_dearpygui_frame()
 
-    def start_test(self):
+    def __start_test(self):
         """
             starts the dynamometer test
         """
-        self.populate_test()
-        self.flag.value = True
+        self.__populate_test()
+        self.start_time = round(time.time(), 1)
+        self.running_flag.value = True
         dpg.configure_item("start_button", show=False)
         dpg.configure_item("stop_button", show=True)
         dpg.configure_item("pause_button", show=True)
         work_order = dpg.get_value("work_order")
         file_name = "recordings/" + work_order + "_" + time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
-        audio_process = mp.Process(target=self.audio_proccesing, args=(file_name,))
+        audio_process = mp.Process(target=self.__audio_processing, args=(file_name,))
         audio_process.start()
 
-    def stop_test(self):
+    def __stop_test(self):
         """
             stops the dynamometer test
         """
-        self.flag.value = False
+        self.running_flag.value = False
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
 
-    def pause_test(self):
+    def __pause_test(self):
         """
            pauses the dynamometer test
        """
@@ -193,7 +206,10 @@ class DynoGUI():
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
 
-    def populate_test(self):
+    def __populate_test(self):
+        """
+        Populate data for the selected test
+        """
         for profile in self.config["profiles"]:
             if profile["name"] == dpg.get_value("profile_combo"):
                 for sequence in profile["sequence"]:
@@ -208,41 +224,42 @@ class DynoGUI():
                 dpg.set_axis_limits("rpm_axis", min(self.test_sequence) - 100, max(self.test_sequence) + 100)
                 dpg.set_axis_limits("time_axis", 0, len(self.time_x_axis))
 
-    def update_plot_data(self):
+    def __update_plot_data(self):
         """
             Updates the plots with new data generated from separate python processes
-            :param time_fft_q: The queue for fft time x-axis data
-            :param data_fft_q: The queue for fft data y-axis data
         """
         if self.data_fft_q.qsize() > 0:
             fft_data = self.data_fft_q.get()
             fft_time = self.time_fft_q.get()
             dpg.set_value('fft_series', [fft_time, fft_data])
 
-        if self.flag.value == True:
-            if int(time.time()) > self.last_time:
-                print("Add")
-                self.last_time = int(time.time())
+        if self.running_flag.value == True:
+            current_time = round(time.time(), 1)
 
-                dpg.set_value('present_time',  [self.time_x_axis[0:self.index], self.test_sequence[0:self.index]])
-                self.index = self.index + 1
+            elapsed_time = current_time-self.start_time
+            self.rpm_time.append(elapsed_time)
 
+            before = self.test_sequence[int(elapsed_time)]
+            after = self.test_sequence[int(elapsed_time)+1]
 
+            if after != before:
+                slope = after - before
+                before = before + (slope * (elapsed_time - int(elapsed_time)))
 
+            self.fake_rpm_data.append(before)
 
-    def audio_proccesing(self, file_name):
+            dpg.set_value('present_time',  [self.rpm_time, self.fake_rpm_data])
+
+    def __audio_processing(self, file_name):
         """
            Separate python process for doing audio processing
-           :param time_fft_q: The queue for fft time x-axis data
-           :param data_fft_q: The queue for fft data y-axis data
            :param file_name: The name of the file to save the audio recordings to
-           :param flag: multiprocessing flag to singal when recording should be active
        """
-        recording_process = Recorder(self.time_fft_q, self.data_fft_q, file_name, 'wb', self.flag)
+        recording_process = Recorder(self.time_fft_q, self.data_fft_q, file_name, 'wb', self.running_flag)
         recording_process.record()
 
-    def clean_up(self):
+    def __clean_up(self):
         """
            cleans up the python processes before terminating
        """
-        self.flag.value = False
+        self.running_flag.value = False

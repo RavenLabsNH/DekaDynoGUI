@@ -2,17 +2,21 @@ profiles:
   - name: Acoustic
     sequence:
       - RPM: 200
-      - Dwell: 20
+      - Dwell: 25
       - RPM: 400
-      - Dwell: 10
+      - Dwell: 15
       - RPM: 600
       - Dwell: 30
   - name: Break-in
     sequence:
-      - RPM: 1000
-      - Dwell: 200
+      - RPM: 400
+      - Dwell: 10
       - RPM: 200
-      - Dwell: 20
+      - Dwell: 10
+      - RPM: 400
+      - Dwell: 10
+      - RPM: 200
+      - Dwell: 10
   - name: Grants Profile
     sequence:
       - RPM: 1000
