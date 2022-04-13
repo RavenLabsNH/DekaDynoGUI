@@ -9,14 +9,16 @@ profiles:
       - Dwell: 30
   - name: Break-in
     sequence:
+      - RPM: 0
+      - Dwell: 5
       - RPM: 400
-      - Dwell: 10
+      - Dwell: 5
       - RPM: 200
-      - Dwell: 10
+      - Dwell: 5
       - RPM: 400
-      - Dwell: 10
+      - Dwell: 5
       - RPM: 200
-      - Dwell: 10
+      - Dwell: 5
   - name: Grants Profile
     sequence:
       - RPM: 1000

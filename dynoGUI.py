@@ -22,7 +22,6 @@ class DynoGUI():
         self.fake_rpm_data = []
         self.rpm_time = []
 
-
     def create_page(self):
         """
         Create the page with DearPyGUI components
@@ -38,6 +37,7 @@ class DynoGUI():
             font_regular_18 = dpg.add_font("fonts/Inter-Regular.ttf", 32)
             font_regular_24 = dpg.add_font("fonts/Inter-Regular.ttf", 36)
             font_regular_40 = dpg.add_font("fonts/Inter-Regular.ttf", 44)
+            font_regular_50 = dpg.add_font("fonts/Inter-Regular.ttf", 60)
 
         with dpg.theme() as rpm_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -61,6 +61,12 @@ class DynoGUI():
                 dpg.add_theme_color(dpg.mvThemeCol_Border, (249, 122, 94), category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
 
+        with dpg.theme() as start_button_theme:
+            with dpg.theme_component(dpg.mvAll):
+                dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 128, 0), category=dpg.mvThemeCat_Core)
+                dpg.add_theme_color(dpg.mvThemeCol_Border, (0, 128, 0), category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
+
         with dpg.theme() as input_theme:
             with dpg.theme_component(dpg.mvAll):
                 dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 7, 9, category=dpg.mvThemeCat_Core)
@@ -68,6 +74,10 @@ class DynoGUI():
         with dpg.theme() as progress_chart_theme:
             with dpg.theme_component(dpg.mvAll):
                 dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 6, category=dpg.mvThemeCat_Plots)
+
+        with dpg.theme() as base_chart_theme:
+            with dpg.theme_component(dpg.mvAll):
+                dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 4, category=dpg.mvThemeCat_Plots)
 
         with dpg.window(tag="Dyno", width=1440, height=1024) as window:
             # Title
@@ -92,7 +102,7 @@ class DynoGUI():
             dpg.add_button(label="Start", width=429, height=40, pos=[971, 116], show=True, tag="start_button",
                            callback=self.__start_test)
             dpg.bind_item_font(dpg.last_item(), font_regular_14)
-            # dpg.bind_item_theme(dpg.last_item(), pause_button_theme)
+            dpg.bind_item_theme(dpg.last_item(), start_button_theme)
 
             dpg.add_button(label="Pause", width=202, height=40, pos=[971, 116], show=False, tag="pause_button",
                            callback=self.__pause_test)
@@ -107,19 +117,19 @@ class DynoGUI():
             with dpg.child_window(height=136, width=429, pos=[40, 196]):
                 dpg.add_text("RPM", pos=[170, 17])
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("140", pos=[161, 79])
+                dpg.add_text("0", pos=[161, 79], tag="rpm_value")
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=136, width=429, pos=[505, 196]):
                 dpg.add_text("Motor Torque", pos=[132, 17])
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("123", pos=[161, 79])
+                dpg.add_text("0", pos=[161, 79])
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=136, width=429, pos=[971, 196]):
                 dpg.add_text("Holding Torque", pos=[129, 17])
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("162", pos=[161, 79])
+                dpg.add_text("0", pos=[161, 79])
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=614, width=646, pos=[40, 370]):
@@ -132,6 +142,7 @@ class DynoGUI():
                     dpg.add_line_series([0, 5000, 10000, 15000, 20000, 25000], [0, 10000, 20000, 30000, 40000],
                                         label="FFT",
                                         parent=dpg.last_item(), tag="fft_series")
+                    dpg.bind_item_theme(dpg.last_item(), base_chart_theme)
 
             with dpg.child_window(height=614, width=680, pos=[720, 370]):
                 dpg.add_text("Motor Profile", pos=[21, 39])
@@ -186,14 +197,20 @@ class DynoGUI():
         work_order = dpg.get_value("work_order")
         file_name = "recordings/" + work_order + "_" + time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
-        audio_process = mp.Process(target=self.__audio_processing, args=(file_name,))
+        audio_process = mp.Process(target=self.audio_processing, args=(file_name,))
         audio_process.start()
+
 
     def __stop_test(self):
         """
             stops the dynamometer test
         """
         self.running_flag.value = False
+
+        dpg.set_value('present_time', [[], []])
+        self.rpm_time = []
+        self.fake_rpm_data = []
+
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
@@ -202,6 +219,7 @@ class DynoGUI():
         """
            pauses the dynamometer test
        """
+        self.running_flag.value = False
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
@@ -210,6 +228,9 @@ class DynoGUI():
         """
         Populate data for the selected test
         """
+        self.time_x_axis = []
+        self.test_sequence = []
+
         for profile in self.config["profiles"]:
             if profile["name"] == dpg.get_value("profile_combo"):
                 for sequence in profile["sequence"]:
@@ -221,6 +242,8 @@ class DynoGUI():
                                 self.test_sequence.append(rpm)
                 self.time_x_axis = list(range(0, len(self.test_sequence)))
                 dpg.set_value('rpm_series', [self.time_x_axis, self.test_sequence])
+                #dpg.set_axis_limits_auto("rpm_axis")
+                #dpg.fit_axis_data("time_axis")
                 dpg.set_axis_limits("rpm_axis", min(self.test_sequence) - 100, max(self.test_sequence) + 100)
                 dpg.set_axis_limits("time_axis", 0, len(self.time_x_axis))
 
@@ -239,18 +262,26 @@ class DynoGUI():
             elapsed_time = current_time-self.start_time
             self.rpm_time.append(elapsed_time)
 
+            if int(elapsed_time) >= len(self.test_sequence):
+                self.__stop_test()
+                return
             before = self.test_sequence[int(elapsed_time)]
-            after = self.test_sequence[int(elapsed_time)+1]
 
-            if after != before:
-                slope = after - before
-                before = before + (slope * (elapsed_time - int(elapsed_time)))
+            if int(elapsed_time) + 1 >= len(self.test_sequence):
+                self.__stop_test()
+
+            else:
+                after = self.test_sequence[int(elapsed_time)+1]
+
+                if after != before:
+                    slope = after - before
+                    before = before + (slope * (elapsed_time - int(elapsed_time)))
 
             self.fake_rpm_data.append(before)
-
+            dpg.set_value('rpm_value', int(before))
             dpg.set_value('present_time',  [self.rpm_time, self.fake_rpm_data])
 
-    def __audio_processing(self, file_name):
+    def audio_processing(self, file_name):
         """
            Separate python process for doing audio processing
            :param file_name: The name of the file to save the audio recordings to
