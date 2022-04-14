@@ -37,7 +37,6 @@ class DynoGUI():
             font_regular_18 = dpg.add_font("fonts/Inter-Regular.ttf", 32)
             font_regular_24 = dpg.add_font("fonts/Inter-Regular.ttf", 36)
             font_regular_40 = dpg.add_font("fonts/Inter-Regular.ttf", 44)
-            font_regular_50 = dpg.add_font("fonts/Inter-Regular.ttf", 60)
 
         with dpg.theme() as rpm_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -68,7 +67,9 @@ class DynoGUI():
                 dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
 
         with dpg.theme() as input_theme:
-            with dpg.theme_component(dpg.mvAll):
+            with dpg.theme_component(dpg.mvAll, enabled_state=True):
+                dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 7, 9, category=dpg.mvThemeCat_Core)
+            with dpg.theme_component(dpg.mvAll, enabled_state=False):
                 dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 7, 9, category=dpg.mvThemeCat_Core)
 
         with dpg.theme() as progress_chart_theme:
@@ -77,7 +78,18 @@ class DynoGUI():
 
         with dpg.theme() as base_chart_theme:
             with dpg.theme_component(dpg.mvAll):
-                dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 4, category=dpg.mvThemeCat_Plots)
+                dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 2, category=dpg.mvThemeCat_Plots)
+
+        with dpg.theme() as center_button_theme:
+            with dpg.theme_component(dpg.mvAll):
+
+                # set text alignment on button to align to the right
+                dpg.add_theme_style(dpg.mvStyleVar_ButtonTextAlign, 0.5, category=dpg.mvThemeCat_Core)
+
+                # set the colour of all states of a button to the background colour
+                dpg.add_theme_color(dpg.mvThemeCol_Button, (36, 40, 42), category=dpg.mvThemeCat_Core)
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (36, 40, 42), category=dpg.mvThemeCat_Core)
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (36, 40, 42), category=dpg.mvThemeCat_Core)
 
         with dpg.window(tag="Dyno", width=1440, height=1024) as window:
             # Title
@@ -115,21 +127,27 @@ class DynoGUI():
             dpg.bind_item_theme(dpg.last_item(), stop_button_theme)
 
             with dpg.child_window(height=136, width=429, pos=[40, 196]):
-                dpg.add_text("RPM", pos=[170, 17])
+                dpg.add_button(label="RPM", pos=[0, 17], width=429)
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("0", pos=[161, 79], tag="rpm_value")
+                dpg.add_button(label="0", pos=[0, 79], width=429, tag="rpm_value")
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=136, width=429, pos=[505, 196]):
-                dpg.add_text("Motor Torque", pos=[132, 17])
+                dpg.add_button(label="Motor Torque", pos=[0, 17], width=429)
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("0", pos=[161, 79])
+                dpg.add_button(label="0", pos=[0, 79], width=429)
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=136, width=429, pos=[971, 196]):
-                dpg.add_text("Holding Torque", pos=[129, 17])
+                dpg.add_button(label="Holding Torque", pos=[0, 17], width=429)
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
-                dpg.add_text("0", pos=[161, 79])
+                dpg.add_button(label="0", pos=[0, 79], width=429)
+                dpg.bind_item_theme(dpg.last_item(), center_button_theme)
                 dpg.bind_item_font(dpg.last_item(), font_regular_40)
 
             with dpg.child_window(height=614, width=646, pos=[40, 370]):
@@ -194,6 +212,8 @@ class DynoGUI():
         dpg.configure_item("start_button", show=False)
         dpg.configure_item("stop_button", show=True)
         dpg.configure_item("pause_button", show=True)
+        dpg.configure_item("work_order", enabled=False)
+        dpg.configure_item("profile_combo", enabled=False)
         work_order = dpg.get_value("work_order")
         file_name = "recordings/" + work_order + "_" + time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
@@ -214,6 +234,8 @@ class DynoGUI():
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
+        dpg.configure_item("work_order", enabled=True)
+        dpg.configure_item("profile_combo", enabled=True)
 
     def __pause_test(self):
         """
@@ -242,8 +264,6 @@ class DynoGUI():
                                 self.test_sequence.append(rpm)
                 self.time_x_axis = list(range(0, len(self.test_sequence)))
                 dpg.set_value('rpm_series', [self.time_x_axis, self.test_sequence])
-                #dpg.set_axis_limits_auto("rpm_axis")
-                #dpg.fit_axis_data("time_axis")
                 dpg.set_axis_limits("rpm_axis", min(self.test_sequence) - 100, max(self.test_sequence) + 100)
                 dpg.set_axis_limits("time_axis", 0, len(self.time_x_axis))
 
@@ -278,7 +298,7 @@ class DynoGUI():
                     before = before + (slope * (elapsed_time - int(elapsed_time)))
 
             self.fake_rpm_data.append(before)
-            dpg.set_value('rpm_value', int(before))
+            dpg.configure_item("rpm_value", label=int(before))
             dpg.set_value('present_time',  [self.rpm_time, self.fake_rpm_data])
 
     def audio_processing(self, file_name):
