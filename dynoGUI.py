@@ -15,6 +15,7 @@ class DynoGUI():
         self.running_flag = mp.Value(c_bool, False)
         self.profile_names = []
         self.test_sequence = []
+        self.is_paused = False
 
         #To Be Deleted
         self.start_time = 0
@@ -155,12 +156,12 @@ class DynoGUI():
                 dpg.bind_item_font(dpg.last_item(), font_regular_16)
                 with dpg.plot(pos=[22, 79], height=510, width=598, tag="fft_plot"):
                     dpg.add_plot_legend()
-                    dpg.add_plot_axis(dpg.mvXAxis, label="Hertz", log_scale=False)
-                    dpg.add_plot_axis(dpg.mvYAxis, label="dB", log_scale=False)
-                    dpg.add_line_series([0, 5000, 10000, 15000, 20000, 25000], [0, 10000, 20000, 30000, 40000],
-                                        label="FFT",
-                                        parent=dpg.last_item(), tag="fft_series")
+                    dpg.add_plot_axis(dpg.mvXAxis, label="Hertz", log_scale=False, tag="hertz_axis")
+                    dpg.add_plot_axis(dpg.mvYAxis, label="dB", log_scale=False, tag="db_axis")
+                    dpg.add_line_series([], [], label="FFT", parent=dpg.last_item(), tag="fft_series")
                     dpg.bind_item_theme(dpg.last_item(), base_chart_theme)
+                    dpg.set_axis_limits("db_axis", 0, 40000)
+                    dpg.set_axis_limits("hertz_axis", 0, 23000)
 
             with dpg.child_window(height=614, width=680, pos=[720, 370]):
                 dpg.add_text("Motor Profile", pos=[21, 39])
@@ -206,8 +207,10 @@ class DynoGUI():
         """
             starts the dynamometer test
         """
-        self.__populate_test()
-        self.start_time = round(time.time(), 1)
+        if not self.is_paused:
+            self.__populate_test()
+            self.start_time = round(time.time(), 1)
+
         self.running_flag.value = True
         dpg.configure_item("start_button", show=False)
         dpg.configure_item("stop_button", show=True)
@@ -217,8 +220,15 @@ class DynoGUI():
         work_order = dpg.get_value("work_order")
         file_name = "recordings/" + work_order + "_" + time.strftime("%m%d%Y-%H%M%S") + ".wav"
 
+        dpg.set_axis_limits_auto("db_axis")
+        dpg.set_axis_limits_auto("hertz_axis")
+        dpg.set_axis_limits_auto("rpm_axis")
+        dpg.set_axis_limits_auto("time_axis")
+
         audio_process = mp.Process(target=self.audio_processing, args=(file_name,))
         audio_process.start()
+
+
 
 
     def __stop_test(self):
@@ -242,6 +252,7 @@ class DynoGUI():
            pauses the dynamometer test
        """
         self.running_flag.value = False
+        self.is_paused = True
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
