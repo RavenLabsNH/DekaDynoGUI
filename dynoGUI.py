@@ -16,6 +16,7 @@ class DynoGUI():
         self.profile_names = []
         self.test_sequence = []
         self.is_paused = False
+        self.paused_offset = 0
 
         #To Be Deleted
         self.start_time = 0
@@ -84,7 +85,6 @@ class DynoGUI():
         with dpg.theme() as center_button_theme:
             with dpg.theme_component(dpg.mvAll):
 
-                # set text alignment on button to align to the right
                 dpg.add_theme_style(dpg.mvStyleVar_ButtonTextAlign, 0.5, category=dpg.mvThemeCat_Core)
 
                 # set the colour of all states of a button to the background colour
@@ -104,6 +104,8 @@ class DynoGUI():
                           callback=self.__populate_test, tag="profile_combo")
             dpg.bind_item_font("profile_combo", font_regular_16)
             dpg.bind_item_theme(dpg.last_item(), input_theme)
+
+
 
             dpg.add_text("Work Order Number", pos=[516, 96])
             dpg.bind_item_font(dpg.last_item(), font_regular_12)
@@ -209,7 +211,7 @@ class DynoGUI():
         """
         if not self.is_paused:
             self.__populate_test()
-            self.start_time = round(time.time(), 1)
+        self.start_time = round(time.time(), 1)
 
         self.running_flag.value = True
         dpg.configure_item("start_button", show=False)
@@ -227,9 +229,6 @@ class DynoGUI():
 
         audio_process = mp.Process(target=self.audio_processing, args=(file_name,))
         audio_process.start()
-
-
-
 
     def __stop_test(self):
         """
@@ -253,6 +252,10 @@ class DynoGUI():
        """
         self.running_flag.value = False
         self.is_paused = True
+
+        self.paused_offset = round(time.time(), 1) - self.start_time
+        self.start_time
+
         dpg.configure_item("start_button", show=True)
         dpg.configure_item("stop_button", show=False)
         dpg.configure_item("pause_button", show=False)
