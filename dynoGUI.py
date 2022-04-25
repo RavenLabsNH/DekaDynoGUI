@@ -92,7 +92,7 @@ class DynoGUI():
                 dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (36, 40, 42), category=dpg.mvThemeCat_Core)
                 dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (36, 40, 42), category=dpg.mvThemeCat_Core)
 
-        with dpg.window(tag="Dyno", width=1440, height=1024) as window:
+        with dpg.window(tag="Dyno", width=1920, height=1024) as window:
             # Title
             dpg.add_text("Gearbox Dyno", pos=[40, 40])
             dpg.bind_item_font(dpg.last_item(), font_regular_24)
@@ -105,7 +105,7 @@ class DynoGUI():
             dpg.bind_item_font("profile_combo", font_regular_16)
             dpg.bind_item_theme(dpg.last_item(), input_theme)
 
-
+            dpg.add_button(label="Test" ,pos=[491, 116], height=120, width=40)
 
             dpg.add_text("Work Order Number", pos=[516, 96])
             dpg.bind_item_font(dpg.last_item(), font_regular_12)
@@ -187,8 +187,9 @@ class DynoGUI():
                     dpg.add_line_series([], [], label="Load Torque", parent=dpg.last_item(), tag="load_torque_series")
                     dpg.add_line_series([], [], label="Motor Torque", parent="torque_axis", tag="motor_torque_series")
 
-        dpg.create_viewport(title='Gearbox Dyno', width=1440, height=1064, x_pos=40, y_pos=40)
+        dpg.create_viewport(title='Gearbox Dyno', width=1920, height=1064, x_pos=40, y_pos=40)
         dpg.bind_item_theme(window, rpm_theme)
+        dpg.toggle_viewport_fullscreen()
         dpg.setup_dearpygui()
         dpg.show_viewport()
 
